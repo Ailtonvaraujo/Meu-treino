@@ -3,97 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Treino Diário</title>
+    <title>Meu Treino Pro - Tabela</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        h1 { color: #333; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        input, button { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        h1 { color: #333; margin-bottom: 5px; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
         
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        
+        /* Painéis */
+        .painel-planos { background-color: #e9ecef; padding: 10px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ced4da; }
+        .card-exercicio { background: #fff; border: 2px solid #28a745; padding: 10px; margin-bottom: 10px; border-radius: 8px; }
+        .card-titulo { font-weight: bold; color: #28a745; margin-bottom: 5px; display: block;}
+
         /* Botões */
         .btn-salvar { background-color: #28a745; color: white; font-weight: bold; cursor: pointer; border: none; }
-        .btn-salvar:hover { background-color: #218838; }
+        .btn-criar-plano { background-color: #17a2b8; color: white; font-weight: bold; border: none; cursor: pointer; margin-bottom: 10px;}
+        .btn-apagar-plano { background-color: #dc3545; color: white; border: none; padding: 5px; font-size: 0.8em; width: auto; margin-top: 5px;}
+        .acoes-extras { margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; display: flex; flex-direction: column; gap: 5px;}
+        .btn-backup { background-color: #007bff; color: white; border: none; cursor: pointer; }
+        .btn-restaurar { background-color: #6c757d; color: white; border: none; cursor: pointer; }
+        .btn-limpar { background-color: #dc3545; color: white; border: none; cursor: pointer; margin-top: 10px;}
 
-        .btn-apagar { background-color: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: auto; margin-left: 10px; }
-        
-        /* Botões de Ação no fundo */
-        .acoes-extras { margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; }
-        
-        .btn-backup { background-color: #007bff; color: white; border: none; cursor: pointer; margin-bottom: 10px;}
-        .btn-backup:hover { background-color: #0056b3; }
-
-        .btn-limpar { background-color: #6c757d; color: white; border: none; cursor: pointer; }
-
-        /* Lista */
-        ul { list-style-type: none; padding: 0; }
-        li { background: #fff; border-bottom: 1px solid #eee; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .detalhes-treino { font-size: 0.9em; color: #555; }
-        .negrito { font-weight: bold; color: #000; }
+        /* --- ESTILO DA TABELA --- */
+        .dia-container { border-left: 5px solid #007bff; padding-left: 15px; margin-bottom: 25px; }
+        .dia-titulo { font-size: 1.2em; color: #333; margin-bottom: 10px; background-color: #f0f8ff; padding: 5px; border-radius: 4px; }
+        .tabela-exercicio { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.9em; }
+        .tabela-exercicio th { background-color: #eee; text-align: left; padding: 5px; border-bottom: 2px solid #ddd; }
+        .tabela-exercicio td { border-bottom: 1px solid #eee; padding: 8px 5px; }
+        .nome-exercicio-header { color: #28a745; font-weight: bold; font-size: 1.1em; margin-top: 10px; display: block; }
+        .btn-apagar-mini { background-color: #ff4d4d; color: white; border: none; padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.8em; width: auto; margin: 0; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>🏋️ Meu Treino</h1>
+        <h1>🏋️ Meu Treino Pro</h1>
         
-        <label>Data:</label>
-        <input type="date" id="dataTreino">
-        <input type="text" id="exercicio" placeholder="Nome do Exercício (Ex: Supino)">
-        <input type="number" id="peso" placeholder="Carga (Kg)">
-        <input type="number" id="repeticoes" placeholder="Repetições">
+        <div class="painel-planos">
+            <button class="btn-criar-plano" onclick="criarNovoPlano()">➕ Criar Nova Rotina</button>
+            <label>Treino de hoje:</label>
+            <select id="seletorPlanos" onchange="carregarExerciciosDoPlano()">
+                <option value="">-- Escolha --</option>
+                <option value="livre">Modo Livre</option>
+            </select>
+            <button onclick="apagarPlanoAtual()" class="btn-apagar-plano">Excluir rotina</button>
+        </div>
 
-        <button class="btn-salvar" onclick="adicionarSerie()">Salvar Série</button>
-
-        <h3>Histórico:</h3>
-        <ul id="listaDeTreinos"></ul>
+        <div id="areaInput"></div>
+        <hr>
+        
+        <h3>Histórico / Relatório:</h3>
+        <div id="listaDeTreinos"></div>
         
         <div class="acoes-extras">
-            <button class="btn-backup" onclick="baixarBackup()">💾 Baixar Backup dos Dados</button>
-            <button class="btn-limpar" onclick="limparHistorico()">⚠️ Limpar Tudo</button>
+            <button class="btn-backup" onclick="baixarBackup()">💾 Baixar Backup</button>
+            <input type="file" id="inputRestaurar" style="display: none;" onchange="processarArquivo(this)">
+            <button class="btn-restaurar" onclick="abrirSeletorArquivo()">📂 Restaurar Dados</button>
+            <button class="btn-limpar" onclick="limparHistorico()">⚠️ Limpar Histórico</button>
         </div>
     </div>
 
     <script>
-        document.getElementById('dataTreino').valueAsDate = new Date();
+        carregarSeletorPlanos();
         carregarLista();
+        document.getElementById('seletorPlanos').value = "livre";
+        carregarExerciciosDoPlano();
 
-        function adicionarSerie() {
-            let data = document.getElementById('dataTreino').value;
-            let nome = document.getElementById('exercicio').value;
-            let peso = document.getElementById('peso').value;
-            let reps = document.getElementById('repeticoes').value;
+        // --- FUNÇÕES DE ROTINA E INPUT ---
+        function criarNovoPlano() {
+            let nomePlano = prompt("Nome do treino (Ex: Costas):");
+            if (!nomePlano) return;
+            let exerciciosTexto = prompt("Exercícios (separados por vírgula):");
+            if (!exerciciosTexto) return;
+            let listaExercicios = exerciciosTexto.split(',').map(item => item.trim());
+            let planos = JSON.parse(localStorage.getItem('meusPlanos')) || {};
+            planos[nomePlano] = listaExercicios;
+            localStorage.setItem('meusPlanos', JSON.stringify(planos));
+            carregarSeletorPlanos();
+        }
 
-            if (nome === "" || peso === "" || reps === "") {
-                alert("Preenche tudo!");
-                return;
+        function carregarSeletorPlanos() {
+            let seletor = document.getElementById('seletorPlanos');
+            let planos = JSON.parse(localStorage.getItem('meusPlanos')) || {};
+            seletor.innerHTML = `<option value="">-- Escolha --</option><option value="livre">Modo Livre</option>`;
+            for (let nome in planos) {
+                let opcao = document.createElement('option');
+                opcao.value = nome;
+                opcao.text = nome;
+                seletor.appendChild(opcao);
             }
+        }
 
+        function carregarExerciciosDoPlano() {
+            let nomePlano = document.getElementById('seletorPlanos').value;
+            let areaInput = document.getElementById('areaInput');
+            areaInput.innerHTML = ''; 
+            const agora = new Date();
+            const dataHoje = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
+
+            if (nomePlano === 'livre' || nomePlano === '') {
+                areaInput.innerHTML = `
+                    <label>Data:</label>
+                    <input type="date" id="dataUnica" value="${dataHoje}">
+                    <input type="text" id="exercicioUnico" placeholder="Nome do Exercício">
+                    <input type="number" id="pesoUnico" placeholder="Carga (Kg)">
+                    <input type="number" id="repsUnico" placeholder="Repetições">
+                    <button class="btn-salvar" onclick="salvarSerieUnica()">Salvar Série</button>
+                `;
+            } else {
+                let planos = JSON.parse(localStorage.getItem('meusPlanos')) || {};
+                let exercicios = planos[nomePlano];
+                exercicios.forEach((nomeExercicio, index) => {
+                    let div = document.createElement('div');
+                    div.className = 'card-exercicio';
+                    div.innerHTML = `
+                        <span class="card-titulo">${nomeExercicio}</span>
+                        <input type="date" value="${dataHoje}" id="data-${index}" style="display:none">
+                        <div style="display:flex; gap:5px;">
+                            <input type="number" id="peso-${index}" placeholder="Kg">
+                            <input type="number" id="reps-${index}" placeholder="Reps">
+                        </div>
+                        <button class="btn-salvar" onclick="salvarSerieRotina('${nomeExercicio}', ${index})">Salvar</button>
+                    `;
+                    areaInput.appendChild(div);
+                });
+            }
+        }
+
+        function apagarPlanoAtual() {
+            let nomePlano = document.getElementById('seletorPlanos').value;
+            if (nomePlano === "livre" || nomePlano === "") return;
+            if (confirm("Apagar rotina?")) {
+                let planos = JSON.parse(localStorage.getItem('meusPlanos')) || {};
+                delete planos[nomePlano];
+                localStorage.setItem('meusPlanos', JSON.stringify(planos));
+                carregarSeletorPlanos();
+                document.getElementById('seletorPlanos').value = "livre";
+                carregarExerciciosDoPlano();
+            }
+        }
+
+        function salvarSerieUnica() {
+            let data = document.getElementById('dataUnica').value;
+            let nome = document.getElementById('exercicioUnico').value;
+            let peso = document.getElementById('pesoUnico').value;
+            let reps = document.getElementById('repsUnico').value;
+            salvarNoHistorico(data, nome, peso, reps);
+            document.getElementById('pesoUnico').value = ''; 
+            document.getElementById('repsUnico').value = '';
+        }
+
+        function salvarSerieRotina(nome, index) {
+            let data = document.getElementById(`data-${index}`).value;
+            let peso = document.getElementById(`peso-${index}`).value;
+            let reps = document.getElementById(`reps-${index}`).value;
+            if (peso === "" || reps === "") { alert("Coloque peso e reps!"); return; }
+            salvarNoHistorico(data, nome, peso, reps);
+            let btn = document.querySelector(`button[onclick="salvarSerieRotina('${nome}', ${index})"]`);
+            btn.style.backgroundColor = "#6c757d";
+            btn.innerText = "Salvo! ✅";
+        }
+
+        function salvarNoHistorico(data, nome, peso, reps) {
+            if (nome === "" || peso === "" || reps === "") { alert("Preencha tudo!"); return; }
             let treino = { data, nome, peso, reps };
             let historico = JSON.parse(localStorage.getItem('meusTreinos')) || [];
             historico.unshift(treino);
             localStorage.setItem('meusTreinos', JSON.stringify(historico));
-
             carregarLista();
-            limparCampos();
         }
+
+        // --- EXIBIÇÃO AGRUPADA (CORRIGIDA) ---
 
         function carregarLista() {
             let listaHtml = document.getElementById('listaDeTreinos');
             let historico = JSON.parse(localStorage.getItem('meusTreinos')) || [];
             listaHtml.innerHTML = '';
 
-            historico.forEach(function(treino, index) {
-                let item = document.createElement('li');
-                let dataFormatada = new Date(treino.data).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
+            // 1. Agrupar por Data
+            let dadosAgrupados = {};
+            
+            historico.forEach((treino, indexReal) => {
+                let dataKey = treino.data;
+                if (!dadosAgrupados[dataKey]) {
+                    dadosAgrupados[dataKey] = {};
+                }
+                let nomeExercicio = treino.nome;
+                if (!dadosAgrupados[dataKey][nomeExercicio]) {
+                    dadosAgrupados[dataKey][nomeExercicio] = [];
+                }
+                dadosAgrupados[dataKey][nomeExercicio].push({
+                    peso: treino.peso,
+                    reps: treino.reps,
+                    index: indexReal
+                });
+            });
 
-                item.innerHTML = `
-                    <div>
-                        <div class="negrito">${dataFormatada} - ${treino.nome}</div>
-                        <div class="detalhes-treino">Carga: ${treino.peso}kg | Reps: ${treino.reps}</div>
-                    </div>
-                    <button class="btn-apagar" onclick="apagarItem(${index})">🗑️</button>
-                `;
-                listaHtml.appendChild(item);
+            // 2. Ordenar e Desenhar
+            let datasOrdenadas = Object.keys(dadosAgrupados).sort().reverse();
+
+            datasOrdenadas.forEach(data => {
+                let containerDia = document.createElement('div');
+                containerDia.className = 'dia-container';
+                
+                let partes = data.split('-');
+                let dataBonita = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                let htmlDia = `<div class="dia-titulo">📅 ${dataBonita}</div>`;
+
+                // CORREÇÃO FEITA AQUI: 'for (let exercicio in dadosAgrupados[data])'
+                for (let exercicio in dadosAgrupados[data]) {
+                    let series = dadosAgrupados[data][exercicio];
+                    
+                    series.reverse(); // Para ficar Série 1, Série 2...
+
+                    htmlDia += `<span class="nome-exercicio-header">${exercicio}</span>`;
+                    htmlDia += `
+                        <table class="tabela-exercicio">
+                            <thead>
+                                <tr>
+                                    <th>Série</th>
+                                    <th>Carga</th>
+                                    <th>Reps</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    series.forEach((serie, i) => {
+                        htmlDia += `
+                            <tr>
+                                <td>${i + 1}ª</td>
+                                <td>${serie.peso}kg</td>
+                                <td>${serie.reps}</td>
+                                <td><button class="btn-apagar-mini" onclick="apagarItem(${serie.index})">X</button></td>
+                            </tr>
+                        `;
+                    });
+
+                    htmlDia += `</tbody></table>`;
+                }
+
+                containerDia.innerHTML = htmlDia;
+                listaHtml.appendChild(containerDia);
             });
         }
 
@@ -104,39 +257,45 @@
             carregarLista();
         }
 
-        // --- NOVA FUNÇÃO DE BACKUP ---
         function baixarBackup() {
-            // 1. Pega os dados
-            let dados = localStorage.getItem('meusTreinos');
-            
-            if (!dados) {
-                alert("Ainda não tens treinos para salvar!");
-                return;
-            }
-
-            // 2. Cria o tal "saco virtual" (Blob)
-            let blob = new Blob([dados], { type: "application/json" });
-            
-            // 3. Cria um link invisível para download
+            let dadosTreinos = JSON.parse(localStorage.getItem('meusTreinos') || "[]");
+            let dadosPlanos = JSON.parse(localStorage.getItem('meusPlanos') || "{}");
+            let backupCompleto = { treinos: dadosTreinos, planos: dadosPlanos };
+            let blob = new Blob([JSON.stringify(backupCompleto)], { type: "application/json" });
             let link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = "meu-treino-backup.json"; // Nome do ficheiro
-            
-            // 4. Clica no link automaticamente e limpa
+            link.download = "meu-treino-backup-pro.json";
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
 
-        function limparCampos() {
-            document.getElementById('exercicio').value = '';
-            document.getElementById('peso').value = '';
-            document.getElementById('repeticoes').value = '';
-            document.getElementById('exercicio').focus();
+        function abrirSeletorArquivo() { document.getElementById('inputRestaurar').click(); }
+
+        function processarArquivo(input) {
+            let arquivo = input.files[0];
+            if (!arquivo) return;
+            let leitor = new FileReader();
+            leitor.onload = function(e) {
+                try {
+                    let conteudo = JSON.parse(e.target.result);
+                    if (conteudo.treinos) {
+                        localStorage.setItem('meusTreinos', JSON.stringify(conteudo.treinos));
+                        localStorage.setItem('meusPlanos', JSON.stringify(conteudo.planos));
+                    } else {
+                        localStorage.setItem('meusTreinos', JSON.stringify(conteudo));
+                    }
+                    carregarLista();
+                    carregarSeletorPlanos();
+                    alert("Dados restaurados!");
+                } catch (erro) { alert("Erro no arquivo."); }
+            };
+            leitor.readAsText(arquivo);
+            input.value = '';
         }
 
         function limparHistorico() {
-            if(confirm("Apagar tudo?")) {
+            if(confirm("Apagar histórico?")) {
                 localStorage.removeItem('meusTreinos');
                 carregarLista();
             }
