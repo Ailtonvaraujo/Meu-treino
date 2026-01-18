@@ -19,7 +19,11 @@
         /* Botões */
         .btn-salvar { background-color: #28a745; color: white; font-weight: bold; cursor: pointer; border: none; }
         .btn-criar-plano { background-color: #17a2b8; color: white; font-weight: bold; border: none; cursor: pointer; margin-bottom: 10px;}
-        .btn-apagar-plano { background-color: #dc3545; color: white; border: none; padding: 5px; font-size: 0.8em; width: auto; margin-top: 5px;}
+        
+        /* Botões de Gestão da Rotina */
+        .btn-editar-plano { background-color: #ffc107; color: black; border: none; padding: 8px; cursor: pointer; width: 48%; margin-top: 5px; margin-right: 2%; font-weight: bold;}
+        .btn-apagar-plano { background-color: #dc3545; color: white; border: none; padding: 8px; cursor: pointer; width: 48%; margin-top: 5px;}
+
         .acoes-extras { margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; display: flex; flex-direction: column; gap: 5px;}
         .btn-backup { background-color: #007bff; color: white; border: none; cursor: pointer; }
         .btn-restaurar { background-color: #6c757d; color: white; border: none; cursor: pointer; }
@@ -38,16 +42,21 @@
 <body>
 
     <div class="container">
-        <h1>🏋️ Meu Treino Pro (Ailton)</h1>
+        <h1>🏋️ Meu Treino Pro</h1>
         
         <div class="painel-planos">
             <button class="btn-criar-plano" onclick="criarNovoPlano()">➕ Criar Nova Rotina</button>
+            
             <label>Treino de hoje:</label>
             <select id="seletorPlanos" onchange="carregarExerciciosDoPlano()">
                 <option value="">-- Escolha --</option>
                 <option value="livre">Modo Livre</option>
             </select>
-            <button onclick="apagarPlanoAtual()" class="btn-apagar-plano">Excluir rotina</button>
+            
+            <div style="display:flex; justify-content: space-between;">
+                <button onclick="editarPlanoAtual()" class="btn-editar-plano">✏️ Editar</button>
+                <button onclick="apagarPlanoAtual()" class="btn-apagar-plano">🗑️ Excluir</button>
+            </div>
         </div>
 
         <div id="areaInput"></div>
@@ -70,30 +79,96 @@
         document.getElementById('seletorPlanos').value = "livre";
         carregarExerciciosDoPlano();
 
-        // --- FUNÇÕES DE ROTINA E INPUT ---
+        // --- FUNÇÕES DE ROTINA (CRIAR, EDITAR, APAGAR) ---
+
         function criarNovoPlano() {
             let nomePlano = prompt("Nome do treino (Ex: Costas):");
             if (!nomePlano) return;
             let exerciciosTexto = prompt("Exercícios (separados por vírgula):");
             if (!exerciciosTexto) return;
-            let listaExercicios = exerciciosTexto.split(',').map(item => item.trim());
+            salvarPlano(nomePlano, exerciciosTexto);
+        }
+
+        // --- NOVA FUNÇÃO DE EDITAR ---
+        function editarPlanoAtual() {
+            let nomeAtual = document.getElementById('seletorPlanos').value;
+            
+            if (nomeAtual === "livre" || nomeAtual === "") {
+                alert("Selecione uma rotina criada por si para editar.");
+                return;
+            }
+
+            // 1. Pega os dados atuais
             let planos = JSON.parse(localStorage.getItem('meusPlanos')) || {};
-            planos[nomePlano] = listaExercicios;
+            let exerciciosAtuais = planos[nomeAtual];
+
+            // 2. Pergunta o novo nome (já preenchido com o antigo)
+            let novoNome = prompt("Edite o nome da rotina:", nomeAtual);
+            if (!novoNome) return; // Se cancelar, para tudo.
+
+            // 3. Pergunta os exercícios (já preenchidos com os antigos)
+            // O join transforma a lista ["A", "B"] no texto "A, B" para ser fácil editar
+            let exerciciosTexto = prompt("Edite os exercícios (separe por vírgula):", exerciciosAtuais.join(", "));
+            if (!exerciciosTexto) return;
+
+            // 4. Se o nome mudou, apaga o antigo antes de salvar o novo
+            if (novoNome !== nomeAtual) {
+                delete planos[nomeAtual];
+                localStorage.setItem('meusPlanos', JSON.stringify(planos));
+            }
+
+            // 5. Salva os novos dados
+            salvarPlano(novoNome, exerciciosTexto);
+            alert("Rotina atualizada!");
+        }
+
+        function salvarPlano(nome, textoExercicios) {
+            let listaExercicios = textoExercicios.split(',').map(item => item.trim());
+            let planos = JSON.parse(localStorage.getItem('meusPlanos')) || {};
+            planos[nome] = listaExercicios;
             localStorage.setItem('meusPlanos', JSON.stringify(planos));
+            
             carregarSeletorPlanos();
+            // Seleciona automaticamente o plano que acabámos de criar/editar
+            document.getElementById('seletorPlanos').value = nome;
+            carregarExerciciosDoPlano();
+        }
+
+        function apagarPlanoAtual() {
+            let nomePlano = document.getElementById('seletorPlanos').value;
+            if (nomePlano === "livre" || nomePlano === "") return;
+            if (confirm("Apagar rotina permanentemente?")) {
+                let planos = JSON.parse(localStorage.getItem('meusPlanos')) || {};
+                delete planos[nomePlano];
+                localStorage.setItem('meusPlanos', JSON.stringify(planos));
+                carregarSeletorPlanos();
+                document.getElementById('seletorPlanos').value = "livre";
+                carregarExerciciosDoPlano();
+            }
         }
 
         function carregarSeletorPlanos() {
             let seletor = document.getElementById('seletorPlanos');
+            // Guarda o valor atual para tentar manter selecionado após recarregar
+            let valorAtual = seletor.value; 
             let planos = JSON.parse(localStorage.getItem('meusPlanos')) || {};
+            
             seletor.innerHTML = `<option value="">-- Escolha --</option><option value="livre">Modo Livre</option>`;
+            
             for (let nome in planos) {
                 let opcao = document.createElement('option');
                 opcao.value = nome;
                 opcao.text = nome;
                 seletor.appendChild(opcao);
             }
+            
+            // Tenta restaurar a seleção se ela ainda existir
+            if(planos[valorAtual] || valorAtual === 'livre') {
+                seletor.value = valorAtual;
+            }
         }
+
+        // --- RESTO DAS FUNÇÕES (IGUAIS) ---
 
         function carregarExerciciosDoPlano() {
             let nomePlano = document.getElementById('seletorPlanos').value;
@@ -131,19 +206,6 @@
             }
         }
 
-        function apagarPlanoAtual() {
-            let nomePlano = document.getElementById('seletorPlanos').value;
-            if (nomePlano === "livre" || nomePlano === "") return;
-            if (confirm("Apagar rotina?")) {
-                let planos = JSON.parse(localStorage.getItem('meusPlanos')) || {};
-                delete planos[nomePlano];
-                localStorage.setItem('meusPlanos', JSON.stringify(planos));
-                carregarSeletorPlanos();
-                document.getElementById('seletorPlanos').value = "livre";
-                carregarExerciciosDoPlano();
-            }
-        }
-
         function salvarSerieUnica() {
             let data = document.getElementById('dataUnica').value;
             let nome = document.getElementById('exercicioUnico').value;
@@ -174,77 +236,37 @@
             carregarLista();
         }
 
-        // --- EXIBIÇÃO AGRUPADA (CORRIGIDA) ---
-
         function carregarLista() {
             let listaHtml = document.getElementById('listaDeTreinos');
             let historico = JSON.parse(localStorage.getItem('meusTreinos')) || [];
             listaHtml.innerHTML = '';
-
-            // 1. Agrupar por Data
             let dadosAgrupados = {};
-            
             historico.forEach((treino, indexReal) => {
                 let dataKey = treino.data;
-                if (!dadosAgrupados[dataKey]) {
-                    dadosAgrupados[dataKey] = {};
-                }
+                if (!dadosAgrupados[dataKey]) { dadosAgrupados[dataKey] = {}; }
                 let nomeExercicio = treino.nome;
-                if (!dadosAgrupados[dataKey][nomeExercicio]) {
-                    dadosAgrupados[dataKey][nomeExercicio] = [];
-                }
-                dadosAgrupados[dataKey][nomeExercicio].push({
-                    peso: treino.peso,
-                    reps: treino.reps,
-                    index: indexReal
-                });
+                if (!dadosAgrupados[dataKey][nomeExercicio]) { dadosAgrupados[dataKey][nomeExercicio] = []; }
+                dadosAgrupados[dataKey][nomeExercicio].push({ peso: treino.peso, reps: treino.reps, index: indexReal });
             });
-
-            // 2. Ordenar e Desenhar
             let datasOrdenadas = Object.keys(dadosAgrupados).sort().reverse();
 
             datasOrdenadas.forEach(data => {
                 let containerDia = document.createElement('div');
                 containerDia.className = 'dia-container';
-                
                 let partes = data.split('-');
                 let dataBonita = `${partes[2]}/${partes[1]}/${partes[0]}`;
                 let htmlDia = `<div class="dia-titulo">📅 ${dataBonita}</div>`;
 
-                // CORREÇÃO FEITA AQUI: 'for (let exercicio in dadosAgrupados[data])'
                 for (let exercicio in dadosAgrupados[data]) {
                     let series = dadosAgrupados[data][exercicio];
-                    
-                    series.reverse(); // Para ficar Série 1, Série 2...
-
+                    series.reverse(); 
                     htmlDia += `<span class="nome-exercicio-header">${exercicio}</span>`;
-                    htmlDia += `
-                        <table class="tabela-exercicio">
-                            <thead>
-                                <tr>
-                                    <th>Série</th>
-                                    <th>Carga</th>
-                                    <th>Reps</th>
-                                    <th>Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-
+                    htmlDia += `<table class="tabela-exercicio"><thead><tr><th>Série</th><th>Carga</th><th>Reps</th><th>Ação</th></tr></thead><tbody>`;
                     series.forEach((serie, i) => {
-                        htmlDia += `
-                            <tr>
-                                <td>${i + 1}ª</td>
-                                <td>${serie.peso}kg</td>
-                                <td>${serie.reps}</td>
-                                <td><button class="btn-apagar-mini" onclick="apagarItem(${serie.index})">X</button></td>
-                            </tr>
-                        `;
+                        htmlDia += `<tr><td>${i + 1}ª</td><td>${serie.peso}kg</td><td>${serie.reps}</td><td><button class="btn-apagar-mini" onclick="apagarItem(${serie.index})">X</button></td></tr>`;
                     });
-
                     htmlDia += `</tbody></table>`;
                 }
-
                 containerDia.innerHTML = htmlDia;
                 listaHtml.appendChild(containerDia);
             });
@@ -302,6 +324,4 @@
         }
     </script>
 </body>
-
 </html>
-
