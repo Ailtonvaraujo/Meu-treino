@@ -10,27 +10,25 @@
         .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
         input, button { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
         
-        /* Botão principal (Salvar) */
+        /* Botões */
         .btn-salvar { background-color: #28a745; color: white; font-weight: bold; cursor: pointer; border: none; }
         .btn-salvar:hover { background-color: #218838; }
+
+        .btn-apagar { background-color: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: auto; margin-left: 10px; }
+        
+        /* Botões de Ação no fundo */
+        .acoes-extras { margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; }
+        
+        .btn-backup { background-color: #007bff; color: white; border: none; cursor: pointer; margin-bottom: 10px;}
+        .btn-backup:hover { background-color: #0056b3; }
+
+        .btn-limpar { background-color: #6c757d; color: white; border: none; cursor: pointer; }
 
         /* Lista */
         ul { list-style-type: none; padding: 0; }
         li { background: #fff; border-bottom: 1px solid #eee; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
         .detalhes-treino { font-size: 0.9em; color: #555; }
         .negrito { font-weight: bold; color: #000; }
-
-        /* Botão de Apagar (lixo) */
-        .btn-apagar {
-            background-color: #ff4d4d;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            width: auto; /* Para não ocupar a largura toda */
-            margin-left: 10px;
-        }
     </style>
 </head>
 <body>
@@ -49,11 +47,13 @@
         <h3>Histórico:</h3>
         <ul id="listaDeTreinos"></ul>
         
-        <button onclick="limparHistorico()" style="background-color: #6c757d; color: white; margin-top: 20px; border: none; cursor: pointer;">Limpar Todo o Histórico</button>
+        <div class="acoes-extras">
+            <button class="btn-backup" onclick="baixarBackup()">💾 Baixar Backup dos Dados</button>
+            <button class="btn-limpar" onclick="limparHistorico()">⚠️ Limpar Tudo</button>
+        </div>
     </div>
 
     <script>
-        // Define a data de hoje automaticamente
         document.getElementById('dataTreino').valueAsDate = new Date();
         carregarLista();
 
@@ -82,7 +82,6 @@
             let historico = JSON.parse(localStorage.getItem('meusTreinos')) || [];
             listaHtml.innerHTML = '';
 
-            // O parâmetro 'index' diz-nos a posição do item na lista (0, 1, 2...)
             historico.forEach(function(treino, index) {
                 let item = document.createElement('li');
                 let dataFormatada = new Date(treino.data).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
@@ -98,19 +97,35 @@
             });
         }
 
-        // --- NOVA FUNÇÃO ---
         function apagarItem(index) {
-            // 1. Ler a lista atual
             let historico = JSON.parse(localStorage.getItem('meusTreinos')) || [];
-            
-            // 2. Remover o item na posição 'index'. O '1' significa "remover 1 item"
             historico.splice(index, 1);
-            
-            // 3. Guardar a lista atualizada
             localStorage.setItem('meusTreinos', JSON.stringify(historico));
-            
-            // 4. Atualizar a tela
             carregarLista();
+        }
+
+        // --- NOVA FUNÇÃO DE BACKUP ---
+        function baixarBackup() {
+            // 1. Pega os dados
+            let dados = localStorage.getItem('meusTreinos');
+            
+            if (!dados) {
+                alert("Ainda não tens treinos para salvar!");
+                return;
+            }
+
+            // 2. Cria o tal "saco virtual" (Blob)
+            let blob = new Blob([dados], { type: "application/json" });
+            
+            // 3. Cria um link invisível para download
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "meu-treino-backup.json"; // Nome do ficheiro
+            
+            // 4. Clica no link automaticamente e limpa
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function limparCampos() {
